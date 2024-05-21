@@ -4217,3 +4217,31 @@ class FerriteTestnet(Ferrite):
         'enode2.ferritecoin.org s t',
         'enode3.ferritecoin.org s t',
     ]
+
+import zmq
+context = zmq.Context(1)  # Create a ZeroMQ context with one I/O thread
+requester = context.socket(zmq.REQ)  # Create a REQ socket
+requester.connect("tcp://127.0.0.1:5555")  # Connect to the server at the specified address
+
+class Repnet(Coin):
+    NAME = "RepNet"
+    SHORTNAME = "R3P"
+    GENESIS_HASH = ('00000000009ce9acb93bc86543c21071'
+                    '95a1432bce04d29d98e861a9e2968b73')
+    TX_COUNT = 50000
+    TX_COUNT_HEIGHT = 50000
+    TX_PER_BLOCK = 1
+    NET = "mainnet"
+    RPC_PORT = 8682
+    DEFAULT_MAX_SEND = 1000000
+    BLOCK_PROCESSOR = block_proc.LTORBlockProcessor
+
+    @classmethod
+    def header_hash(cls, header):
+        '''Given a header return the hash.'''
+        zmqRequest = bytearray(80 + 32)
+        zmqRequest[0:80] = header
+        requester.send(zmqRequest)
+        zmqResponse = requester.recv()
+        hash = zmqResponse[0:32]
+        return hash
